@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { add } from '../utils/storage'
 import { TAG_LIST } from '../utils/time'
 import { filterFillers } from '../utils/filter'
-import { getRecommendations } from '../utils/recommend'
 
 export default function Create() {
   const navigate = useNavigate()
@@ -15,10 +14,7 @@ export default function Create() {
   const [voiceState, setVoiceState] = useState('idle') // idle | recording | processing | done
   const [voiceText, setVoiceText] = useState('')
   const [filterResult, setFilterResult] = useState(null)
-
-  // 保存成功后显示推荐
-  const [savedItem, setSavedItem] = useState(null) // null | { content, tag }
-  const [recommendations, setRecommendations] = useState(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => inputRef.current?.focus(), 300)
@@ -93,34 +89,30 @@ export default function Create() {
 
   // ── 保存 ──────────────────────────────────────
   const handleSave = () => {
-    if (!content.trim()) return
-    const trimmed = content.trim()
-    add({ content: trimmed, tag: selectedTag })
-
-    // 计算推荐
-    const rec = getRecommendations(trimmed, selectedTag)
-    setSavedItem({ content: trimmed, tag: selectedTag })
-    setRecommendations(rec)
+    if (!content.trim() || saving) return
+    setSaving(true)
+    add({ content: content.trim(), tag: selectedTag })
+    // 通过 localStorage 通知首页显示 Toast
+    localStorage.setItem('inspiration-toast', '灵感已保存 ✅')
+    navigate('/')
   }
 
-  const handleGoHome = () => navigate('/')
-
-  const canSave = content.trim().length > 0
+  const canSave = content.trim().length > 0 && !saving
 
   const voiceStatusConfig = {
-    idle:    { bar: null, text: '点击🎤开始语音记录', inner: null },
+    idle:      { bar: null, text: '点击🎤开始语音记录', inner: null },
     recording: {
       bar: 'bg-orange-500',
       text: '正在聆听...说完后停顿即可结束',
       inner: (
         <div className="flex items-center justify-center gap-1">
-          {[0,1,2,3,4].map(i => (
-            <span
-              key={i}
-              className="inline-block w-1 bg-white rounded-full animate-pulse"
-              style={{ height: `${12 + (i % 3) * 8}px`, animationDelay: `${i * 0.15}s`, animationDuration: '0.6s' }}
-            />
-          ))}
+        {[0,1,2,3,4].map(i => (
+          <span
+            key={i}
+            className="inline-block w-1 bg-white rounded-full animate-pulse"
+            style={{ height: `${12 + (i % 3) * 8}px`, animationDelay: `${i * 0.15}s`, animationDuration: '0.6s' }}
+          />
+        ))}
         </div>
       ),
     },
@@ -129,9 +121,9 @@ export default function Create() {
       text: '正在识别润色中...',
       inner: (
         <div className="flex items-center justify-center gap-1">
-          {[0,1,2].map(i => (
-            <div key={i} className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay:`${i*0.2}s`}}/>
-          ))}
+        {[0,1,2].map(i => (
+          <div key={i} className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay:`${i*0.2}s`}}/>
+        ))}
         </div>
       ),
     },
@@ -143,107 +135,6 @@ export default function Create() {
   }
 
   const sc = voiceStatusConfig[voiceState]
-
-  // ── 保存成功 & 推荐界面 ──────────────────────
-  if (savedItem && recommendations) {
-    return (
-      <div className="min-h-full bg-gray-50">
-        <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
-          <button
-            onClick={handleGoHome}
-            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
-          >
-            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h2 className="text-base font-semibold text-gray-900">灵感已记录 ✓</h2>
-        </div>
-
-        <div className="px-4 py-5 space-y-4 fade-in">
-          {/* 已保存内容回显 */}
-          <div className="card p-4 border-green-200 bg-green-50/60">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-green-500 text-sm font-medium">✅ 已保存</span>
-            </div>
-            <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">
-              {savedItem.content}
-            </p>
-          </div>
-
-          {/* AI 实现建议 */}
-          <div>
-            <div className="bg-purple-50 rounded-2xl p-4 mb-4">
-              <div className="flex items-start gap-2">
-                <span className="text-lg mt-0.5">🤖</span>
-                <div>
-                  <p className="text-sm font-semibold text-purple-800 mb-1">{recommendations.title}</p>
-                  <p className="text-sm text-purple-700 leading-relaxed">{recommendations.analysis}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {recommendations.approaches.map((app, idx) => (
-                <div
-                  key={idx}
-                  className="card p-4 slide-up border border-gray-100"
-                  style={{ animationDelay: `${idx * 80}ms` }}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-100 text-purple-600 text-xs font-bold">
-                      {idx === 0 ? '⭐ 推荐' : `方案 ${idx + 1}`}
-                    </span>
-                    <span className="text-xs text-gray-400">预计 {app.effort}</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-gray-800 mb-1">{app.name}</h4>
-                  <p className="text-xs text-gray-400 mb-2">{app.stack}</p>
-                  <p className="text-sm text-gray-600 mb-2">{app.desc}</p>
-                  <div className="bg-gray-50 rounded-xl p-2.5 mb-2">
-                    <ol className="space-y-0.5">
-                      {app.steps.map((s, si) => (
-                        <li key={si} className="text-xs text-gray-600 flex gap-1.5">
-                          <span className="text-purple-400 font-bold shrink-0">{si + 1}.</span>
-                          {s}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                  <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-2.5 py-2">
-                    💡 {app.tip}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 操作按钮 */}
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={() => {
-                setSavedItem(null)
-                setRecommendations(null)
-                setContent('')
-                setVoiceState('idle')
-                setVoiceText('')
-                setFilterResult(null)
-                setTimeout(() => inputRef.current?.focus(), 200)
-              }}
-              className="flex-1 py-3 rounded-2xl border border-orange-200 text-orange-600 font-semibold text-sm hover:bg-orange-50 transition-colors"
-            >
-              再记一条
-            </button>
-            <button
-              onClick={handleGoHome}
-              className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-orange-400 to-orange-600 text-white font-semibold text-sm shadow-lg shadow-orange-200 active:scale-[0.98] transition-transform"
-            >
-              查看全部
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // ── 正常记录界面 ──────────────────────────────
   return (
@@ -380,7 +271,7 @@ export default function Create() {
               : 'bg-gray-200 text-gray-400 cursor-not-allowed'
           }`}
         >
-          保存灵感
+          {saving ? '保存中...' : '保存灵感'}
         </button>
 
         <p className="text-center text-xs text-gray-300 pb-8">

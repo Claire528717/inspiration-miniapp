@@ -1,319 +1,402 @@
 // ============================================
-// 灵感速记 - AI 风格实现方式智能推荐
+// 灵感速记 - 对话式澄清引擎
+// 点击「如何实现呢」后，通过多轮提问帮用户澄清想法，
+// 最后给出接地气的行动建议（非技术导向）
 // ============================================
 
-const CATALOG = {
-  miniapp: {
-    match: ['小程序', '微信', '公众号', 'miniapp', '扫码', '订阅消息'],
-    reply: {
-      title: '微信生态方案',
-      analysis: '你的想法非常适合在微信小程序里实现——免安装、扫码即用、天然社交传播，是验证产品概念的最快路径。',
-      approaches: [
-        {
-          name: '微信原生开发',
-          stack: 'WXML + WXSS + JS + 微信云开发',
-          desc: '最轻量方案，没有编译环节，微信开发者工具打开就能写。配合云开发免运维，连后端都不用搭。',
-          steps: ['注册小程序账号（5分钟）', '下载微信开发者工具', '搭建页面结构（WXML/WXSS）', '接入微信云开发做数据存储', '真机预览 → 提交审核'],
-          effort: '3–7 天',
-          tip: '主包控制在 2MB 以内，用分包加载优化首屏速度。',
-        },
-        {
-          name: 'Taro 跨端方案',
-          stack: 'React/Vue + Taro + TDesign',
-          desc: '写一套 React 代码，同时编译出微信小程序和 H5 网页。后续想扩展到支付宝/抖音小程序也零成本。',
-          steps: ['npx @tarojs/cli init 创建项目', '选择 React + TypeScript 模板', '安装 tdesign-miniapp 组件库', '开发页面 → taro build --type weapp', 'H5 版一键 taro build --type h5'],
-          effort: '5–10 天',
-          tip: 'Taro 的 H5 版可直接部署 Vercel，一份代码两个平台。',
-        },
-        {
-          name: 'uni-app 方案',
-          stack: 'Vue 3 + uni-app + uniCloud',
-          desc: 'Vue 开发者首选，生态最成熟。uniCloud 提供 serverless 后端，连数据库都不用自己建。',
-          steps: ['HBuilderX 创建 uni-app 项目', '选择 Vue 3 模板', '使用 uniCloud 的云数据库', '开发页面 → 一键打包多端', '上传至微信开发者工具审核'],
-          effort: '5–10 天',
-          tip: 'uni-app 插件市场有海量现成模板，搜索关键词直接复用。',
-        },
-      ],
-    },
-  },
-  app: {
-    match: ['app', '移动端', '手机', '安卓', 'ios', 'flutter', 'react native', '原生'],
-    reply: {
-      title: '移动端 App 方案',
-      analysis: '做原生 App 意味着更好的性能和用户体验，但也需要更长的开发周期。如果只是验证想法，建议先用小程序快速试错，确认方向后再投入 App 开发。',
-      approaches: [
-        {
-          name: 'Flutter 跨平台',
-          stack: 'Dart + Flutter + Firebase/Supabase',
-          desc: 'Google 出品，一套代码编译 iOS + Android，性能接近原生。Material Design 组件开箱即用。',
-          steps: ['安装 Flutter SDK', 'flutter create 创建项目', '选择状态管理（Provider/Riverpod）', '开发 UI → 接入后端 API', 'flutter build ios/android 打包发布'],
-          effort: '2–4 周',
-          tip: '如果只是内部工具，用 FlutterFlow 拖拽生成，零代码。',
-        },
-        {
-          name: 'React Native',
-          stack: 'JavaScript/TypeScript + React Native + Expo',
-          desc: 'React 开发者无缝切换，Expo 大幅降低原生配置成本。社区最活跃，npm 生态直接复用。',
-          steps: ['npx create-expo-app 初始化', '使用 Expo Router 做页面路由', '接入 NativeWind(Tailwind) 写样式', 'expo build 打包 IPA/APK', 'TestFlight/内部测试分发'],
-          effort: '2–4 周',
-          tip: 'Expo 的 expo-updates 支持 OTA 热更新，免去频繁发版的痛苦。',
-        },
-        {
-          name: '先做小程序验证',
-          stack: '微信小程序 → 再决定是否做 App',
-          desc: '最务实的路径：3 天出小程序 MVP，让用户扫码试用。跑通核心流程后再评估是否需要 App。',
-          steps: ['快速搭建小程序 MVP', '投放给种子用户测试', '收集反馈判断 App 必要性', '需要则用 Flutter/RN 重写'],
-          effort: '3 天（MVP）',
-          tip: '小程序验证成本仅为 App 的 1/10，是精益创业的标准做法。',
-        },
-      ],
-    },
-  },
-  web: {
-    match: ['网页', '前端', '官网', '落地页', 'web', 'h5', '网站', '浏览器', 'spa'],
-    reply: {
-      title: 'Web 应用方案',
-      analysis: 'Web 的优势是链接即入口，无需下载。如果是展示型/工具型产品，Web 是最快的分发方式。',
-      approaches: [
-        {
-          name: 'Vite + React 轻量方案',
-          stack: 'React 18 + Vite + Tailwind CSS + Vercel',
-          desc: '开发速度最快的组合。Vite 热更新秒级，Tailwind 不用写 CSS 文件，Vercel 推送即部署。',
-          steps: ['npm create vite@latest → React', 'npm install tailwindcss 配置主题', '开发页面组件', 'npm run build → 部署 Vercel/CloudStudio', '绑定自定义域名'],
-          effort: '1–3 天',
-          tip: '追求极致速度可以 Clone 灵感速记项目直接改：github.com/Claire528717/inspiration-miniapp',
-        },
-        {
-          name: 'Next.js 全栈方案',
-          stack: 'Next.js 14 + Prisma + PostgreSQL + Vercel',
-          desc: '需要 SEO、服务端渲染、数据库时选这个。App Router + Server Actions 让前后端一体开发。',
-          steps: ['npx create-next-app 创建项目', '选择 App Router + TypeScript', 'setup Prisma + 数据库', '开发 API Routes / Server Actions', 'Vercel 一键部署'],
-          effort: '3–7 天',
-          tip: 'Next.js 的 ISR 增量静态再生功能，内容站 SEO 效果极好。',
-        },
-        {
-          name: '纯静态 HTML 方案',
-          stack: 'HTML + Tailwind CDN + 少许 JS',
-          desc: '如果只是一个展示页/活动页，连 React 都不需要。一个 HTML 文件搞定，丢到任何静态托管上就能跑。',
-          steps: ['创建 index.html', 'CDN 引入 Tailwind CSS', '写页面结构和交互', '上传到 GitHub Pages / Vercel'],
-          effort: '半天',
-          tip: '用 GitHub Pages 免费托管，域名都不需要买。',
-        },
-      ],
-    },
-  },
-  ai: {
-    match: ['ai', '人工智能', '机器学习', '大模型', 'gpt', 'llm', '智能', '推荐算法', '向量', 'embedding', 'chatgpt', 'claude', 'langchain', 'rag', '知识库'],
-    reply: {
-      title: 'AI / 大模型方案',
-      analysis: 'AI 类产品最核心的问题不是技术选型，而是「模型能做到什么」和「用户期望什么」之间的差距管理。先用现成 API 验证核心体验，再考虑自建模型。',
-      approaches: [
-        {
-          name: '直接调用 API 原型',
-          stack: 'OpenAI API / Claude API + Vite + React',
-          desc: '最快的 AI 产品原型路径。在 Web 前端直接调 API，2 小时内做出可演示的 AI 对话/生成工具。',
-          steps: ['注册 OpenAI / Anthropic 获取 API Key', '前端调用 chat completions API', '实现流式输出（SSE）打字效果', '添加 prompt 工程优化效果', '部署到 Vercel（Key 放环境变量）'],
-          effort: '1–2 天',
-          tip: 'API Key 必须放后端或 Vercel 环境变量，绝不能暴露在前端代码里。',
-        },
-        {
-          name: 'LangChain RAG 知识库',
-          stack: 'Python + LangChain + ChromaDB + FastAPI',
-          desc: '当 AI 需要基于你的私有数据回答时，用 RAG（检索增强生成）。把你的文档/知识库向量化，让 AI 基于真实数据回答。',
-          steps: ['安装 LangChain + ChromaDB', '准备知识库文档（Markdown/PDF）', '使用 text-embedding 生成向量', '搭建 FastAPI 后端服务', '前端调用 API 展示 RAG 结果'],
-          effort: '1–2 周',
-          tip: '向量数据库选 ChromaDB（轻量）或 Pinecone（生产级），看你的数据量。',
-        },
-        {
-          name: 'Dify / Coze 低代码 AI',
-          stack: 'Dify 开源平台 / Coze（字节跳动）',
-          desc: '不想写代码搭 AI 应用？Dify 提供可视化拖拽的 AI 工作流，内置 RAG、Agent、工具调用，部署后直接有 API 可用。',
-          steps: ['Docker 部署 Dify（docker-compose up）', '配置 LLM 提供商（OpenAI/本地模型）', '拖拽搭建 AI 工作流', '发布 → 获得 API endpoint', '前端对接 API'],
-          effort: '3–5 天',
-          tip: 'Dify 自带对话日志和分析面板，产品迭代时可以看用户都在问什么。',
-        },
-      ],
-    },
-  },
-  data: {
-    match: ['数据', '分析', '报表', '可视化', '图表', '统计', 'excel', 'dashboard', 'bi', '数据看板', '指标'],
-    reply: {
-      title: '数据 / 可视化方案',
-      analysis: '数据类产品关键在于「用户能看懂什么」而不是「你能展示多少」。先确定 3 个最核心指标，围绕它们设计看板，再扩展。',
-      approaches: [
-        {
-          name: '前端图表嵌入',
-          stack: 'React + ECharts/Recharts + Tailwind',
-          desc: '数据量不大的情况下，在前端直接渲染图表最快。ECharts 支持所有图表类型，Recharts 更 React 原生。',
-          steps: ['npm install echarts 或 recharts', '准备 Mock 数据验证图表类型', '确定配色和交互（tooltip/缩放）', '接入真实数据源', '优化渲染性能（数据量大用虚拟滚动）'],
-          effort: '2–5 天',
-          tip: 'ECharts 的 dataset 模式支持数据源和图表分离，切换图表类型只需改一行。',
-        },
-        {
-          name: 'Python 数据分析管线',
-          stack: 'Python + Pandas + Streamlit/Gradio',
-          desc: '需要数据清洗、计算后再展示？Python 生态最强。Streamlit 能把 Python 脚本秒变交互式网页。',
-          steps: ['pip install pandas streamlit plotly', '写数据清洗脚本（Pandas）', '用 Plotly 生成交互图表', 'streamlit run app.py 启动', '部署到 Streamlit Cloud'],
-          effort: '1–3 天',
-          tip: 'Streamlit 的 st.cache 能缓存计算结果，大幅加速重复查询。',
-        },
-        {
-          name: 'Metabase 零代码 BI',
-          stack: 'Metabase（开源 BI 工具）',
-          desc: '连上数据库直接拖拽出图，不需要写一行代码。适合内部团队快速搭建数据看板。',
-          steps: ['Docker 部署 Metabase', '连接数据源（MySQL/PG/BigQuery）', '用 GUI 创建问题和仪表盘', '设置定时推送报表', '分享链接给团队'],
-          effort: '半天',
-          tip: 'Metabase 的「问一个问题」支持自然语言查询，非技术人员也能自己查数据。',
-        },
-      ],
-    },
-  },
-  backend: {
-    match: ['后端', '接口', 'api', '服务器', '数据库', '存储', '登录', '用户', '微服务', '后台', '管理'],
-    reply: {
-      title: '后端 / 服务方案',
-      analysis: '后端选型的关键因素是：团队最熟悉什么语言、数据量多大、是否需要实时通信。验证阶段选最轻的方案，别过早优化架构。',
-      approaches: [
-        {
-          name: 'Node.js 全栈',
-          stack: 'Node.js + Express/Fastify + Prisma + PostgreSQL',
-          desc: '前后端统一 JavaScript，一个人就能搞定全栈。Prisma 是当下最好的 Node ORM，类型安全。',
-          steps: ['npm init + express/fastify 脚手架', 'npx prisma init 配置数据库 Schema', '编写 RESTful API 路由', '中间件：JWT 认证 + 参数校验', '部署到 Railway/Render/VPS'],
-          effort: '3–7 天',
-          tip: 'Fastify 比 Express 快 2 倍，JSON Schema 校验内置，推荐新项目用。',
-        },
-        {
-          name: 'Python 快速后端',
-          stack: 'Python + FastAPI + SQLAlchemy + PostgreSQL',
-          desc: 'AI/数据类产品的首选后端。FastAPI 自动生成 Swagger 文档，类型提示驱动开发，效率极高。',
-          steps: ['pip install fastapi uvicorn sqlalchemy', '定义 Pydantic 数据模型', '编写 API 路由（自动生成文档）', '添加依赖注入和中间件', '部署到 Docker/VPS'],
-          effort: '3–7 天',
-          tip: 'FastAPI 的 BackgroundTasks 可以异步处理耗时操作，用户不用等。',
-        },
-        {
-          name: 'Serverless / BaaS',
-          stack: 'Supabase / Firebase / 微信云开发',
-          desc: '不想管服务器？BaaS 平台提供数据库、认证、存储、实时订阅，开箱即用。个人开发者/小团队的最佳选择。',
-          steps: ['注册 Supabase/Firebase 创建项目', '用 SDK 在前端直接操作数据库', '配置 Row Level Security 权限', '开启实时订阅（Realtime）', '设置自动备份'],
-          effort: '1–3 天',
-          tip: 'Supabase 是开源的 PostgreSQL BaaS，自建或托管都行，不会 vendor-lock。',
-        },
-      ],
-    },
-  },
-  tool: {
-    match: ['工具', '效率', '自动化', '脚本', '插件', 'chrome', '扩展', 'notion', '笔记', '剪藏', '快捷键'],
-    reply: {
-      title: '效率工具方案',
-      analysis: '效率工具的核心是「减少用户操作步骤」。如果一个功能需要 3 次点击才能完成，试着减到 1 次。原型阶段用最轻的实现验证用户是否真的需要它。',
-      approaches: [
-        {
-          name: 'Chrome 浏览器扩展',
-          stack: 'HTML + JS + Chrome Extension API',
-          desc: '浏览器插件是最贴近用户的工具形态。一键安装，随时唤起，适合剪藏/翻译/快捷搜索等场景。',
-          steps: ['创建 manifest.json 声明权限', '编写 popup.html（弹出窗口）', 'content_script.js 注入网页', 'background.js 处理后台逻辑', 'Chrome 商店发布'],
-          effort: '2–5 天',
-          tip: 'Manifest V3 是当前标准，Service Worker 替代了 Background Page。',
-        },
-        {
-          name: 'Electron 桌面应用',
-          stack: 'Electron + React + Node.js',
-          desc: '把 Web 技术打包成桌面 App。VS Code、Figma、Notion 都用这套。适合需要本地文件系统访问的工具。',
-          steps: ['npx create-electron-app 初始化', '集成 React 做 UI 层', '使用 Node.js API 访问文件系统', 'electron-builder 打包 exe/dmg', '自动更新（electron-updater）'],
-          effort: '1–2 周',
-          tip: 'Electron 包体积较大（~150MB），如果只是小工具可以考虑 Tauri（Rust 内核，仅 ~10MB）。',
-        },
-        {
-          name: 'n8n / Make 自动化',
-          stack: 'n8n（开源）/ Make.com（云端）',
-          desc: '用拖拽方式连接各种 API。比如「收到邮件 → 自动加入 Notion → 推送到飞书」。不需要写后端代码。',
-          steps: ['Docker 部署 n8n（自建）或用 Make.com', '配置触发器（Webhook/定时/邮件）', '拖拽节点搭建工作流', '测试 → 激活自动化', '监控运行日志'],
-          effort: '1–2 天',
-          tip: 'n8n 自建免费无限制，Make.com 免费版每月 1000 次执行。',
-        },
-      ],
-    },
-  },
-  content: {
-    match: ['内容', '社区', '论坛', '博客', '写作', '文章', '分享', '知识库', '文档', 'wiki'],
-    reply: {
-      title: '内容 / 社区方案',
-      analysis: '内容型产品最难的是冷启动——没有内容就没有用户，没有用户就没有内容。建议先从单点高质量内容做起，用社交媒体分发引流。',
-      approaches: [
-        {
-          name: 'Notion + 分享',
-          stack: 'Notion → 发布为网站',
-          desc: '最快的内容发布方式。Notion 写一页 → 点 Share → Publish to web，1 分钟获得公网链接。',
-          steps: ['在 Notion 整理内容', '设计页面排版和目录', '点击 Share → Publish', '绑定自定义域名（付费功能）', '配合社交媒体分发'],
-          effort: '1 小时',
-          tip: '用 Notion 的 Database 视图可以搭建简单的博客/作品集。',
-        },
-        {
-          name: 'Next.js 文档/博客站',
-          stack: 'Next.js + MDX + Contentlayer + Vercel',
-          desc: '写 Markdown 自动变成网页。技术文档和博客的标配方案，SEO 完美。',
-          steps: ['npx create-next-app 创建项目', '配置 MDX 和 Contentlayer', '设计文章模板和导航', '写第一篇 Markdown 文章', 'Vercel 部署 + 自定义域名'],
-          effort: '2–5 天',
-          tip: '用 Vercel 的 ISR 功能，每次改 Markdown 不需要重新构建整个站。',
-        },
-        {
-          name: '微信公众号生态',
-          stack: '公众号文章 + 小程序',
-          desc: '微信生态内内容触达用户的最佳路径。公众号做内容沉淀，小程序做互动/工具功能，互相导流。',
-          steps: ['注册订阅号/服务号', '撰写第一篇推文', '在小程序里嵌入公众号关注组件', '文章底部放小程序卡片引流', '分析后台数据优化内容策略'],
-          effort: '1–3 天',
-          tip: '服务号每月只能群发 4 次，但支持模板消息和支付，选类型时想清楚。',
-        },
-      ],
-    },
-  },
-}
+/**
+ * 对话引擎：根据当前状态和用户回答，决定下一步问什么或给出建议
+ *
+ * 流程：欢迎 → 多轮提问（2-3轮）→ 给出建议
+ */
 
-// 通用默认回复
-const DEFAULT_REPLY = {
-  title: '通用实现建议',
-  analysis: '你的这个想法有多种可行的实现路径，具体取决于你的时间预算、技术背景和最终目标用户是谁。',
-  approaches: [
-    {
-      name: 'Web 原型快速验证',
-      stack: 'React + Vite + Tailwind CSS + Vercel',
-      desc: '最快把想法变成别人能点开的链接。甚至可以基于灵感速记项目直接改：github.com/Claire528717/inspiration-miniapp',
-      steps: ['npm create vite@latest 创建项目', '配置 Tailwind CSS 主题', '开发核心页面和交互', 'LocalStorage 做数据存储', 'Vercel/CloudStudio 一键部署'],
-      effort: '1–3 天',
-      tip: '先做 1 个核心功能让用户试试，而不是一下子做 10 个功能。',
+// 问题库：按场景分类的澄清问题
+const QUESTIONS = {
+  // 第一轮：了解灵感性质
+  round1: {
+    type: 'choice',
+    question: '这个想法，你想用来做什么？',
+    options: [
+      { label: '🚀 做一个产品/项目', value: 'product', hint: '有具体要做出来的东西' },
+      { label: '🎯 实现一个个人目标', value: 'goal', hint: '比如学一门技能、养成一个习惯' },
+      { label: '💡 记录下来备用', value: 'note', hint: '暂时没有具体计划，先记着' },
+      { label: '🤔 我还不太确定', value: 'unsure', hint: '想法还比较模糊' },
+    ],
+  },
+
+  // 第二轮：根据第一轮回答追问
+  round2: {
+    product: {
+      type: 'choice',
+      question: '这个产品是给谁用的？',
+      options: [
+        { label: '👥 给很多人用（大众产品）', value: 'mass' },
+        { label: '🏢 给特定人群用', value: 'niche', followUp: '比如？学生 / 职场人 / 宝妈...' },
+        { label: '🧑 先给自己用', value: 'personal' },
+        { label: '🤝 给团队/公司用', value: 'team' },
+      ],
     },
-    {
-      name: '微信小程序 MVP',
-      stack: '微信原生 / Taro + 微信云开发',
-      desc: '如果需要微信生态的社交传播或支付能力，小程序是最佳载体。免安装，扫码即用。',
-      steps: ['注册小程序账号', '搭建核心 2–3 个页面', '接入微信云开发做后端', '真机预览测试', '提交审核上线'],
-      effort: '3–7 天',
-      tip: '开发版预览码可以发给任何人测试，不需要审核通过。',
+    goal: {
+      type: 'choice',
+      question: '这个目标，你打算什么时候开始？',
+      options: [
+        { label: '⏰ 马上（本周内）', value: 'now' },
+        { label: '📅 近期（1个月内）', value: 'soon' },
+        { label: '🗓️ 还没定时间', value: 'someday' },
+      ],
     },
-    {
-      name: 'Notion 文档 + 规划',
-      stack: 'Notion / 飞书文档',
-      desc: '如果还在想法阶段，先用文档把用户故事、功能列表、竞品分析写清楚。思考清楚比写代码更重要。',
-      steps: ['创建需求文档（用户故事地图）', '画核心流程的线框图', '列出 MVP 功能清单', '找 3 个目标用户聊一聊', '确认方向后再动手写代码'],
-      effort: '半天',
-      tip: '很多产品失败不是因为技术不行，而是做的东西没人需要。先验证需求。',
+    note: {
+      type: 'choice',
+      question: '想怎么处理这条记录？',
+      options: [
+        { label: '📌 设为提醒，改天再想', value: 'remind' },
+        { label: '🔍 搜一下相关资料', value: 'research' },
+        { label: '✍️ 先补充更多细节', value: 'elaborate' },
+      ],
     },
-  ],
+    unsure: {
+      type: 'choice',
+      question: '你觉得这个想法最吸引你的是什么？',
+      options: [
+        { label: '💰 可能有商业价值', value: 'business' },
+        { label: '🎨 创意本身很有趣', value: 'creative' },
+        { label: '😤 解决了一个痛点', value: 'problem' },
+        { label: '🌟 只是觉得很酷', value: 'cool' },
+      ],
+    },
+  },
+
+  // 第三轮：进一步澄清
+  round3: {
+    mass: {
+      type: 'input',
+      question: '你脑海里有没有一个「最小版本」？\n比如用户打开后，能做的第一件有价值的事是什么？',
+      placeholder: '描述一下最核心的功能...',
+    },
+    niche: {
+      type: 'input',
+      question: '你说的特定人群，具体是哪些人？\n越具体越好，比如「25-30岁的职场妈妈」',
+      placeholder: '描述一下目标用户...',
+    },
+    personal: {
+      type: 'choice',
+      question: '给自己用的东西，你更看重什么？',
+      options: [
+        { label: '⚡ 快，别让我配置太多', value: 'speed' },
+        { label: '🎨 好看，用起来舒服', value: 'design' },
+        { label: '🔒 隐私，数据不能给别人', value: 'privacy' },
+      ],
+    },
+    team: {
+      type: 'choice',
+      question: '团队大概多少人用？',
+      options: [
+        { label: '👤 2-5 人', value: 'small' },
+        { label: '👥 5-20 人', value: 'medium' },
+        { label: '🏢 20 人以上', value: 'large' },
+      ],
+    },
+    now: {
+      type: 'input',
+      question: '这个目标，具体想达成什么？\n比如「3个月后能流利对话」而不是「学好日语」',
+      placeholder: '描述一下你期望的结果...',
+    },
+    soon: {
+      type: 'choice',
+      question: '这个目标，你之前尝试过吗？',
+      options: [
+        { label: '✅ 试过，没坚持下来', value: 'tried' },
+        { label: '🆕 第一次尝试', value: 'first' },
+        { label: '🔄 在做，想做得更好', value: 'improving' },
+      ],
+    },
+    remind: {
+      type: 'choice',
+      question: '希望什么时候提醒你？',
+      options: [
+        { label: '📆 1 周后', value: '1w' },
+        { label: '📅 1 个月后', value: '1m' },
+        { label: '⏰ 不设提醒，我自己记得', value: 'none' },
+      ],
+    },
+    research: {
+      type: 'done',
+      // 直接给出搜索建议
+    },
+    business: {
+      type: 'choice',
+      question: '你有没有想过怎么赚钱？',
+      options: [
+        { label: '💳 付费订阅 / 买断', value: 'paid' },
+        { label: '📢 免费，靠广告', value: 'ads' },
+        { label: '🤷 还没想过', value: 'none' },
+      ],
+    },
+    problem: {
+      type: 'input',
+      question: '这个痛点，你自己遇到过吗？\n频率大概是怎样的？',
+      placeholder: '描述一下这个痛点...',
+    },
+  },
 }
 
 /**
- * 根据灵感内容生成 AI 风格的实现建议
- * @param {string} content - 灵感内容
- * @param {string} tag - 分类标签
- * @returns {{ title, analysis, approaches: Array<{name, stack, desc, steps, effort, tip}> }}
+ * 根据对话历史，生成下一步（问题 or 建议）
+ * @param {object} params
+ * @param {string} params.content - 原始灵感内容
+ * @param {string} params.tag - 分类标签
+ * @param {Array} params.answers - 用户回答历史 [{question, answer, value}]
+ * @returns {object} { type: 'question'|'suggestion', data: {...} }
  */
-export function getRecommendations(content, tag = '') {
-  const text = (content + ' ' + tag).toLowerCase()
+export function getNextStep({ content, tag, answers }) {
+  const answeredCount = answers.length
 
-  for (const cat of Object.values(CATALOG)) {
-    const matched = cat.match.find((kw) => text.includes(kw))
-    if (matched) return cat.reply
+  // 第一轮：还没回答过，问 round1
+  if (answeredCount === 0) {
+    return {
+      type: 'question',
+      data: QUESTIONS.round1,
+    }
   }
 
-  return DEFAULT_REPLY
+  // 第二轮：根据第一轮回答问 round2
+  if (answeredCount === 1) {
+    const firstAnswer = answers[0].value
+    const q = QUESTIONS.round2[firstAnswer] || QUESTIONS.round2.unsure
+    return {
+      type: 'question',
+      data: q,
+    }
+  }
+
+  // 第三轮：继续追问或结束
+  if (answeredCount === 2) {
+    const firstAnswer = answers[0].value
+    const secondAnswer = answers[1].value
+    const q = QUESTIONS.round3[secondAnswer] || QUESTIONS.round3[firstAnswer]
+
+    if (q && q.type === 'done') {
+      return generateSuggestion({ content, tag, answers })
+    }
+    if (q) {
+      return {
+        type: 'question',
+        data: q,
+      }
+    }
+  }
+
+  // 三轮结束或无法继续追问，生成建议
+  return generateSuggestion({ content, tag, answers })
+}
+
+/**
+ * 根据对话历史，生成个性化建议
+ */
+function generateSuggestion({ content, tag, answers }) {
+  const purpose = answers[0]?.value // product / goal / note / unsure
+  const detail = answers[1]?.value  // mass / niche / personal / team / now / soon / ...
+
+  // 根据不同目的生成不同风格的建议
+  let suggestion
+
+  if (purpose === 'product') {
+    suggestion = genProductSuggestion(content, answers)
+  } else if (purpose === 'goal') {
+    suggestion = genGoalSuggestion(content, answers)
+  } else if (purpose === 'note') {
+    suggestion = genNoteSuggestion(content, answers)
+  } else {
+    suggestion = genUnsureSuggestion(content, answers)
+  }
+
+  return {
+    type: 'suggestion',
+    data: suggestion,
+  }
+}
+
+// ── 各类建议生成器 ──────────────────────────────────────────────
+
+function genProductSuggestion(content, answers) {
+  const audience = answers[1]?.value
+  const coreFeature = answers[2]?.answer || ''
+
+  let nextSteps = []
+  let mindshift = ''
+  let resources = []
+
+  if (audience === 'mass' || audience === 'niche') {
+    nextSteps = [
+      '📝 写一句话描述：用「用户 + 需要 + 但是 + 所以」的句式，比如「学生需要做PPT，但是模板太丑，所以做一个好看的模板库」',
+      '👥 找3个目标用户聊一聊：别做问卷，直接微信问，「你觉得这个问题存在吗？你现在是怎么办的？」',
+      '📄 画一张流程图：用户从哪来 → 做什么 → 得到什么结果，用纸笔画就行',
+      '🔍 搜一下有没有现成的竞品：如果有，看看他们哪里做得不够好；如果没有，想一想为什么',
+    ]
+    mindshift = '很多人做产品会先想「我能做什么」，但更重要的是「用户愿意为什么付费/花时间」。先验证需求，再写代码。'
+    resources = [
+      '《精益创业》—— 讲如何用最小成本验证想法',
+      'Product Hunt —— 看别人是怎么展示新产品的',
+      '小红书/知乎 —— 搜你的关键词，看大家在抱怨什么',
+    ]
+  } else if (audience === 'personal') {
+    nextSteps = [
+      '🛠️ 先搜「现成工具」：看看有没有已经能解决你问题的 App/小程序，别重复造轮子',
+      '📋 列一个「必须有 vs 最好有」清单：把核心需求圈出来，其他都是加分项',
+      '⏱️ 给自己设一个时间限制：比如「两周内必须做出能用的版本」，防止陷入完美主义',
+    ]
+    mindshift = '给自己用的工具，好用比好看重要，能用比完美重要。先做出一个「能忍」的版本，再慢慢改。'
+    resources = [
+      'Notion —— 可以快速搭建个人工具，不用写代码',
+      '微信小程序「快应用」—— 一些现成的工具模板',
+      'GitHub —— 搜关键词，很多开源工具可以直接用',
+    ]
+  } else if (audience === 'team') {
+    nextSteps = [
+      '📊 先做一个「有没有人愿意用」的调查：在团队里问一圈，看有没有类似痛点',
+      '🎯 锁定一个核心场景：别想解决所有问题，先解决团队最痛的那一个',
+      '📱 做一个超简单的原型：用 Figma 或直接在纸上画，给同事看，收集反馈',
+    ]
+    mindshift = '团队工具的核心是「大家愿意用」。再好的功能，如果大家懒得用，就是零。先解决「为什么现在的方法不够好」。'
+    resources = [
+      '飞书多维表格 —— 很多团队工具其实一张表就能搞定',
+      'Slack/飞书机器人 —— 可以做一些自动化提醒',
+      '内部工具尽量轻量，别搞太复杂',
+    ]
+  }
+
+  return {
+    title: '把想法变成产品的建议',
+    summary: `你的想法「${content.slice(0, 30)}...」听起来很有潜力。关键是先从「我觉得」变成「用户觉得」。`,
+    nextSteps,
+    mindshift,
+    resources,
+  }
+}
+
+function genGoalSuggestion(content, answers) {
+  const timing = answers[1]?.value
+  const detail = answers[2]?.value
+
+  let nextSteps = []
+  let mindshift = ''
+
+  if (timing === 'now' || timing === 'soon') {
+    nextSteps = [
+      '🎯 把目标拆成「第一周能完成的事」：大目标会让人焦虑，小目标才会让人行动',
+      '📅 定一个具体的「开始时间」：比如「这周六早上9点」，而不是「这周末」',
+      '📊 找一个可以量化的指标：比如「每天背30个单词」而不是「学好英语」',
+      '👥 找一个 accountability partner：跟朋友说你的目标，让对方定期问你进展',
+    ]
+    mindshift = '目标最大的敌人不是能力不够，而是「没有紧迫感」。把开始时间定到本周，而不是「有空的时候」。'
+  } else {
+    nextSteps = [
+      '📌 给这条灵感加一个「想做的时间」标签',
+      '🔔 设置一个日历提醒，在你想开始的时间弹出来',
+      '📚 提前做一点背景研究：比如想学吉他，先看看入门教程有哪些',
+    ]
+    mindshift = '「改天再做」通常等于「永远不会做」。如果想真的做，就定一个具体的时间点。'
+  }
+
+  return {
+    title: '把想法变成行动的建议',
+    summary: `「${content.slice(0, 30)}...」—— 想法很好，关键是把它从「想」变成「做」。`,
+    nextSteps,
+    mindshift,
+    resources: [
+      '《原子习惯》—— 讲如何通过小习惯实现大目标',
+      'Notion 目标追踪模板 —— 可以记录和追踪进展',
+      '番茄工作法 —— 25分钟专注，5分钟休息，适合开始行动',
+    ],
+  }
+}
+
+function genNoteSuggestion(content, answers) {
+  const action = answers[1]?.value
+
+  let nextSteps = []
+
+  if (action === 'remind') {
+    nextSteps = [
+      '📱 设置一个手机提醒（用系统提醒事项或微信提醒）',
+      '📝 趁现在还记得，把更多细节补充到这条灵感里',
+      '🔗 搜一下相关关键词，把有用的链接也存下来',
+    ]
+  } else if (action === 'research') {
+    nextSteps = [
+      '🔍 用微信搜一搜 / 知乎 / B站 搜你的关键词，看看别人怎么做的',
+      '📑 把找到的有用内容截图或链接存到这条灵感里',
+      '📒 可以建一个专门的收藏夹 / Notion 页面来整理这类内容',
+    ]
+  } else {
+    nextSteps = [
+      '✍️ 现在就把你能想到的细节都写下来，趁还记得',
+      '🎨 如果是一个创意想法，可以画个草图或找参考图',
+      '💬 跟朋友聊一聊这个想法，别人的反应能帮你判断价值',
+    ]
+  }
+
+  return {
+    title: '关于这条记录的建议',
+    summary: `「${content.slice(0, 30)}...」—— 记录下来本身就是第一步，已经很棒了。`,
+    nextSteps,
+    mindshift: '好记性不如烂笔头。很多人有想法但不记录，过几天就忘了。你现在记下来了，已经超过了大多数人。',
+    resources: [
+      '微信收藏 —— 可以存文章、图片、链接',
+      'Notion / 飞书文档 —— 适合整理系统性的资料',
+      '截图 + 相册分类 —— 最简单的信息收集方式',
+    ],
+  }
+}
+
+function genUnsureSuggestion(content, answers) {
+  const attraction = answers[1]?.value
+
+  let nextSteps = []
+
+  if (attraction === 'business') {
+    nextSteps = [
+      '💰 先想清楚：这个想法解决的是什么问题？有人愿意为解决这个问题付钱吗？',
+      '🗣️ 找5个潜在用户聊一聊：不用做产品，直接问「你愿意为这个付钱吗」',
+      '📈 看看有没有类似的产品已经成功了，他们的商业模式是什么',
+    ]
+    mindshift = '「有商业价值」和「能赚到钱」是两回事。先验证有没有人愿意付钱，再想怎么赚。'
+  } else if (attraction === 'problem') {
+    nextSteps = [
+      '😤 把自己遇到这个痛点的场景写下来，越具体越好',
+      '👥 问问身边的人有没有同样的痛点',
+      '🔍 搜一下现在大家是怎么解决这个问题的，为什么体验不好',
+    ]
+    mindshift = '最好的产品想法来自自己的痛点。因为你自己就是用户，你知道什么体验是糟糕的。'
+  } else {
+    nextSteps = [
+      '💡 把「为什么这个想法很酷」写下来，这会帮你判断它值不值得深入',
+      '🎨 如果是创意类的想法，可以画个草图或做个 Moodboard',
+      '👥 跟朋友分享一下，看他们的反应——是「哇」还是「哦」',
+    ]
+    mindshift = '创意想法的价值在于执行。很多人有很酷的想法，但只有极少数人真的去做了。'
+  }
+
+  return {
+    title: '关于这个想法的建议',
+    summary: `「${content.slice(0, 30)}...」—— 想法本身没有对错，关键是你想用它做什么。`,
+    nextSteps,
+    mindshift: '不用急着下定论。有些想法需要时间沉淀，说不定过几天你会有更清晰的认识。',
+    resources: [
+      '把想法说出来 —— 跟朋友聊是最好的澄清方式',
+      '纸笔 —— 有时候写字比打字更能帮你想清楚',
+      '睡一觉 —— 很多想法第二天醒来会有新的角度',
+    ],
+  }
+}
+
+/**
+ * 获取开场白（点击按钮后的第一句话）
+ */
+export function getWelcomeMessage(content) {
+  const preview = content.length > 20 ? content.slice(0, 20) + '...' : content
+  return {
+    emoji: '🤔',
+    text: `关于「${preview}」，我想问你几个问题，帮你把想法理清楚～`,
+  }
 }
