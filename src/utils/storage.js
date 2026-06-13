@@ -30,6 +30,17 @@ export function remove(id) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
 
+export function update(id, patch) {
+  const list = getAll().map((item) =>
+    item.id === id ? { ...item, ...patch, updatedAt: Date.now() } : item
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+export function getById(id) {
+  return getAll().find((item) => item.id === id) || null;
+}
+
 export function getStats() {
   const list = getAll();
   const today = new Date().toDateString();
