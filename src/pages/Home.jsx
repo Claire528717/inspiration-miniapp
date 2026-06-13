@@ -277,7 +277,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* FAB */}
+      {/* Toast */}
       {toast && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[200] animate-slide-up">
           <div className="bg-green-500 text-white px-5 py-2.5 rounded-2xl shadow-lg text-sm font-medium">
@@ -285,11 +285,49 @@ export default function Home() {
           </div>
         </div>
       )}
-      <button onClick={() => navigate('/create')} className="fab select-none">
-        <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-      </button>
+
+      {/* ── 创意 FAB：灵感捕捉器 ───────────────────── */}
+      <div className="fab-wrapper select-none">
+        {/* 呼吸光晕环 */}
+        <div className="fab-glow-ring" />
+
+        {/* 环绕粒子 */}
+        <div className="fab-particle" />
+        <div className="fab-particle" />
+        <div className="fab-particle" />
+
+        {/* 主按钮 */}
+        <button
+          className="fab-btn"
+          onClick={(e) => {
+            // 点击波纹
+            const rect = e.currentTarget.getBoundingClientRect()
+            const ripple = document.createElement('div')
+            ripple.className = 'fab-ripple'
+            ripple.style.left = '50%'
+            ripple.style.top = '50%'
+            ripple.style.marginLeft = '-5px'
+            ripple.style.marginTop = '-5px'
+            e.currentTarget.appendChild(ripple)
+            setTimeout(() => ripple.remove(), 700)
+
+            // 导航
+            navigate('/create')
+          }}
+        >
+          {/* 星星图标 */}
+          <svg className="fab-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2l1.5 5.5L19 9l-5.5 1.5L12 16l-1.5-5.5L5 9l5.5-1.5z" />
+            <circle cx="19.5" cy="4.5" r="1.2" fill="currentColor" stroke="none" opacity="0.6" />
+            <circle cx="21" cy="8" r="0.8" fill="currentColor" stroke="none" opacity="0.4" />
+            <circle cx="4.5" cy="19.5" r="1" fill="currentColor" stroke="none" opacity="0.5" />
+            <circle cx="3" cy="16" r="0.7" fill="currentColor" stroke="none" opacity="0.35" />
+          </svg>
+
+          {/* 悬停标签 */}
+          <span className="fab-hover-label">记录灵感</span>
+        </button>
+      </div>
 
       {/* 删除确认弹窗 */}
       {deleteId && (
