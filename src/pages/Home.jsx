@@ -1,13 +1,18 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAll, remove, getStats } from '../utils/storage'
 import { getRelativeTime, getTagByKey } from '../utils/time'
+import { getRecommendations } from '../utils/recommend'
 
 export default function Home() {
   const navigate = useNavigate()
   const [items, setItems] = useState([])
   const [stats, setStats] = useState({ total: 0, today: 0 })
   const [deleteId, setDeleteId] = useState(null)
+  const [aiItem, setAiItem] = useState(null)          // 当前正在请求 AI 建议的灵感
+  const [aiReply, setAiReply] = useState(null)         // AI 返回的建议
+  const [aiTyping, setAiTyping] = useState(false)      // 打字机加载中
+  const aiTimer = useRef(null)
 
   const loadData = useCallback(() => {
     setItems(getAll())
@@ -22,6 +27,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('focus', onFocus)
       window.removeEventListener('storage', loadData)
+      if (aiTimer.current) clearTimeout(aiTimer.current)
     }
   }, [loadData])
 
@@ -29,6 +35,25 @@ export default function Home() {
     remove(id)
     setDeleteId(null)
     loadData()
+  }
+
+  const handleAskAI = (item) => {
+    setAiItem(item)
+    setAiTyping(true)
+    setAiReply(null)
+    // 模拟 AI 思考延迟
+    aiTimer.current = setTimeout(() => {
+      const result = getRecommendations(item.content, item.tag || '')
+      setAiReply(result)
+      setAiTyping(false)
+    }, 1200)
+  }
+
+  const closeAI = () => {
+    setAiItem(null)
+    setAiReply(null)
+    setAiTyping(false)
+    if (aiTimer.current) clearTimeout(aiTimer.current)
   }
 
   const getPreview = (content) =>
@@ -102,6 +127,15 @@ export default function Home() {
                   {/* 操作按钮行 */}
                   <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-gray-50">
                     <button
+                      onClick={() => handleAskAI(item)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-purple-500 hover:text-purple-600 hover:bg-purple-50 transition-colors font-medium"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                      </svg>
+                      如何实现呢
+                    </button>
+                    <button
                       onClick={() => navigate(`/edit/${item.id}`)}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-colors"
                     >
@@ -159,6 +193,100 @@ export default function Home() {
               >
                 删除
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI 建议弹窗 */}
+      {aiItem && (
+        <div
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center"
+          onClick={closeAI}
+        >
+          <div
+            className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 弹窗头部 */}
+            <div className="sticky top-0 bg-white z-10 px-5 pt-5 pb-3 border-b border-gray-100 rounded-t-3xl">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-lg">
+                  ✨
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-gray-900">AI 实现建议</h3>
+                  <p className="text-xs text-gray-400 truncate">{aiItem.content.slice(0, 40)}...</p>
+                </div>
+                <button
+                  onClick={closeAI}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* 弹窗内容 */}
+            <div className="px-5 py-4 pb-8">
+              {aiTyping ? (
+                /* 加载动画 */
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="flex gap-1.5 mb-4">
+                    <div className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                  <p className="text-sm text-gray-400">AI 正在分析你的灵感...</p>
+                </div>
+              ) : aiReply ? (
+                /* AI 回复 */
+                <div>
+                  {/* 分析摘要 */}
+                  <div className="bg-purple-50 rounded-2xl p-4 mb-5">
+                    <div className="flex items-start gap-2">
+                      <span className="text-lg mt-0.5">🤖</span>
+                      <div>
+                        <p className="text-sm font-semibold text-purple-800 mb-1">{aiReply.title}</p>
+                        <p className="text-sm text-purple-700 leading-relaxed">{aiReply.analysis}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 方案列表 */}
+                  <div className="space-y-4">
+                    {aiReply.approaches.map((app, idx) => (
+                      <div key={idx} className="border border-gray-100 rounded-2xl p-4 hover:border-purple-200 transition-colors">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-100 text-purple-600 text-xs font-bold">
+                            {idx === 0 ? '⭐ 推荐' : `方案 ${idx + 1}`}
+                          </span>
+                          <span className="text-xs text-gray-400">预计 {app.effort}</span>
+                        </div>
+                        <h4 className="text-sm font-bold text-gray-800 mb-1">{app.name}</h4>
+                        <p className="text-xs text-gray-400 mb-2">{app.stack}</p>
+                        <p className="text-sm text-gray-600 mb-3">{app.desc}</p>
+                        <div className="bg-gray-50 rounded-xl p-3 mb-2">
+                          <p className="text-xs text-gray-400 mb-1.5">📋 实现步骤</p>
+                          <ol className="space-y-1">
+                            {app.steps.map((s, si) => (
+                              <li key={si} className="text-xs text-gray-600 flex gap-2">
+                                <span className="text-purple-400 font-bold shrink-0">{si + 1}.</span>
+                                {s}
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                        <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+                          💡 {app.tip}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

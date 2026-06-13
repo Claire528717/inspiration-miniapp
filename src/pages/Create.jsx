@@ -171,37 +171,47 @@ export default function Create() {
             </p>
           </div>
 
-          {/* 推荐方案 */}
+          {/* AI 实现建议 */}
           <div>
-            <div className="flex items-center gap-2 mb-3 ml-1">
-              <span className="text-base">🚀</span>
-              <p className="text-sm font-semibold text-gray-800">推荐实现方式</p>
-              {recommendations.matchedKeyword && (
-                <span className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
-                  基于「{recommendations.matchedKeyword}」
-                </span>
-              )}
+            <div className="bg-purple-50 rounded-2xl p-4 mb-4">
+              <div className="flex items-start gap-2">
+                <span className="text-lg mt-0.5">🤖</span>
+                <div>
+                  <p className="text-sm font-semibold text-purple-800 mb-1">{recommendations.title}</p>
+                  <p className="text-sm text-purple-700 leading-relaxed">{recommendations.analysis}</p>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-3">
-              {recommendations.suggestions.map((item, i) => (
+              {recommendations.approaches.map((app, idx) => (
                 <div
-                  key={i}
-                  className="card p-4 slide-up"
-                  style={{ animationDelay: `${i * 80}ms` }}
+                  key={idx}
+                  className="card p-4 slide-up border border-gray-100"
+                  style={{ animationDelay: `${idx * 80}ms` }}
                 >
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">{item.icon}</span>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">{item.label}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{item.desc}</p>
-                    </div>
-                    {i === 0 && (
-                      <span className="flex-shrink-0 text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full font-medium">
-                        推荐
-                      </span>
-                    )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-100 text-purple-600 text-xs font-bold">
+                      {idx === 0 ? '⭐ 推荐' : `方案 ${idx + 1}`}
+                    </span>
+                    <span className="text-xs text-gray-400">预计 {app.effort}</span>
                   </div>
+                  <h4 className="text-sm font-bold text-gray-800 mb-1">{app.name}</h4>
+                  <p className="text-xs text-gray-400 mb-2">{app.stack}</p>
+                  <p className="text-sm text-gray-600 mb-2">{app.desc}</p>
+                  <div className="bg-gray-50 rounded-xl p-2.5 mb-2">
+                    <ol className="space-y-0.5">
+                      {app.steps.map((s, si) => (
+                        <li key={si} className="text-xs text-gray-600 flex gap-1.5">
+                          <span className="text-purple-400 font-bold shrink-0">{si + 1}.</span>
+                          {s}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                  <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-2.5 py-2">
+                    💡 {app.tip}
+                  </p>
                 </div>
               ))}
             </div>
