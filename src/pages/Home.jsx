@@ -324,8 +324,8 @@ export default function Home() {
             <circle cx="3" cy="16" r="0.7" fill="currentColor" stroke="none" opacity="0.35" />
           </svg>
 
-          {/* 悬停标签 */}
-          <span className="fab-hover-label">记录灵感</span>
+          {/* 文字标签 */}
+          <span className="fab-btn-label">新建灵感</span>
         </button>
       </div>
 
