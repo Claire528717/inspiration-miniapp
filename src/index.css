@@ -109,7 +109,7 @@
 
   /* ── Extended FAB：灵感捕捉器 ────────────────────── */
   .fab-wrapper {
-    @apply fixed bottom-6 left-1/2 -translate-x-1/2 z-50;
+    @apply fixed bottom-16 left-1/2 -translate-x-1/2 z-50;
     display: flex;
     align-items: center;
     height: 64px;
@@ -359,7 +359,7 @@
 @media (min-width: 600px) {
   .fab-wrapper {
     position: absolute;
-    bottom: 16px;
+    bottom: 80px;
     left: 50%;
     transform: translateX(-50%);
   }

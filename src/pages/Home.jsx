@@ -325,7 +325,7 @@ export default function Home() {
           </svg>
 
           {/* 文字标签 */}
-          <span className="fab-btn-label">新建灵感</span>
+          <span className="fab-btn-label">灵感+1</span>
         </button>
       </div>
 
